@@ -1,0 +1,4 @@
+interface:
+  display_name: "ChatGPT Web CDP"
+  short_description: "Reuse ChatGPT web automation over CDP"
+  default_prompt: "Handle ChatGPT web page automation over a signed-in CDP browser session, including prompting, waiting for JSON replies, and downloading generated images."

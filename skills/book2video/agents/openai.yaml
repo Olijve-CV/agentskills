@@ -1,0 +1,4 @@
+interface:
+  display_name: "Book To Video"
+  short_description: "Research a book link and turn it into a short video"
+  default_prompt: "Study the provided book link plus stronger external sources, write a Chinese short-video production plan, generate per-scene images through chatgpt-web-cdp, create voiceover and subtitles, and render a vertical book-summary video with the title and author at the beginning."
