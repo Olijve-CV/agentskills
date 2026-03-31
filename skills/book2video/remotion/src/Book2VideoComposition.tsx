@@ -97,7 +97,7 @@ const TitleCard: React.FC<{title: string; author: string; hook: string; theme: R
           {theme.label}
         </div>
         <div style={{...baseStyles.title, fontFamily: theme.titleFontFamily}}>{title}</div>
-        <div style={{...baseStyles.author, color: theme.textSecondary}}>作者 {author}</div>
+        <div style={{...baseStyles.author, color: theme.textSecondary}}>作者 · {author}</div>
         <div style={{...baseStyles.hook, color: theme.textMuted}}>{hook}</div>
       </div>
     </AbsoluteFill>
@@ -342,11 +342,11 @@ function getEnergyColor(energy: SceneData["energy"], theme: ReturnType<typeof re
 function energyLabel(energy: SceneData["energy"]) {
   switch (energy) {
     case "high":
-      return "高能";
+      return "高能推进";
     case "low":
-      return "沉静";
+      return "低速沉浸";
     default:
-      return "平衡";
+      return "平稳展开";
   }
 }
 

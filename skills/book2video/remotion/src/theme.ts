@@ -77,7 +77,7 @@ const THEMES: Record<ThemeId, ThemeSpec> = {
   },
   "social-history": {
     id: "social-history",
-    label: "社科历史",
+    label: "社会历史",
     kicker: "ARCHIVE CUT",
     titleFontFamily: '"STSong","SimSun","Songti SC","Noto Serif SC",serif',
     bodyFontFamily: '"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif',
@@ -121,7 +121,7 @@ const THEMES: Record<ThemeId, ThemeSpec> = {
   },
   universal: {
     id: "universal",
-    label: "通用书摘",
+    label: "通用讲书",
     kicker: "BOOK FRAME",
     titleFontFamily: '"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif',
     bodyFontFamily: '"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif',
@@ -155,17 +155,16 @@ const CATEGORY_KEYWORDS: Record<Exclude<ThemeId, "universal">, string[]> = {
     "habit",
     "wealth",
     "decision",
-    "创业",
     "商业",
+    "成长",
+    "创业",
     "管理",
-    "增长",
     "领导力",
-    "营销",
     "效率",
     "习惯",
+    "营销",
     "财富",
-    "成长",
-    "自律"
+    "决策"
   ],
   "psychology-cognition": [
     "psychology",
@@ -183,9 +182,9 @@ const CATEGORY_KEYWORDS: Record<Exclude<ThemeId, "universal">, string[]> = {
     "行为",
     "思维",
     "焦虑",
-    "大脑",
-    "冥想",
-    "疗愈"
+    "脑",
+    "自控",
+    "偏见"
   ],
   "social-history": [
     "history",
@@ -197,17 +196,22 @@ const CATEGORY_KEYWORDS: Record<Exclude<ThemeId, "universal">, string[]> = {
     "nation",
     "biography",
     "memoir",
+    "history fiction",
+    "historical fiction",
     "历史",
     "社会",
     "文化",
     "政治",
     "文明",
-    "战争",
-    "国家",
     "人物",
     "传记",
-    "时代",
-    "制度"
+    "回忆录",
+    "王朝",
+    "唐代",
+    "官场",
+    "制度",
+    "权力",
+    "古代"
   ],
   "fiction-literature": [
     "novel",
@@ -223,26 +227,33 @@ const CATEGORY_KEYWORDS: Record<Exclude<ThemeId, "universal">, string[]> = {
     "小说",
     "文学",
     "故事",
-    "诗歌",
-    "悬疑",
-    "科幻",
-    "奇幻",
-    "爱情",
-    "叙事"
+    "叙事",
+    "虚构",
+    "长篇",
+    "短篇",
+    "寓言",
+    "讽刺",
+    "现实主义",
+    "历史小说"
   ]
 };
 
 export function resolveTheme(data: Partial<RenderProps>): ThemeSpec {
-  const forced = normalizeThemeId(data.themeMode || data.bookCategory || "");
-  if (forced) {
-    return THEMES[forced];
+  const explicit = normalizeThemeId(data.themeMode || "");
+  if (explicit && explicit !== "universal") {
+    return THEMES[explicit];
+  }
+
+  const categoryTheme = normalizeThemeId(data.bookCategory || "");
+  if (categoryTheme) {
+    return THEMES[categoryTheme];
   }
 
   const haystack = [
     data.bookCategory || "",
     ...(data.genreTags || []),
     data.title || "",
-    ...((data.scenes || []).flatMap((scene) => [scene.title, scene.subtitle]))
+    ...((data.scenes || []).flatMap((scene) => [scene.title, scene.subtitle, scene.narration]))
   ]
     .join(" ")
     .toLowerCase();
@@ -265,27 +276,33 @@ function normalizeThemeId(value: string): ThemeId | null {
   const normalized = String(value || "").trim().toLowerCase();
   switch (normalized) {
     case "business-growth":
-    case "商业成长":
     case "business":
     case "growth":
+    case "商业成长":
+    case "商业":
       return "business-growth";
     case "psychology-cognition":
-    case "心理认知":
     case "psychology":
     case "cognition":
+    case "心理认知":
+    case "心理":
       return "psychology-cognition";
     case "social-history":
-    case "社科历史":
     case "history":
     case "society":
+    case "social":
+    case "社会历史":
+    case "历史":
       return "social-history";
     case "fiction-literature":
-    case "小说文学":
     case "fiction":
     case "literature":
+    case "小说文学":
+    case "小说":
+    case "文学":
       return "fiction-literature";
     case "universal":
-    case "通用书摘":
+    case "通用讲书":
       return "universal";
     default:
       return null;

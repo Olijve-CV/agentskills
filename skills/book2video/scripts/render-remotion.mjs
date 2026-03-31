@@ -21,6 +21,11 @@ const MIME_TYPES = new Map([
   [".jpeg", "image/jpeg"],
   [".webp", "image/webp"]
 ]);
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "*"
+};
 
 async function main() {
   const [command, ...rest] = process.argv.slice(2);
@@ -104,9 +109,14 @@ async function handleStudio(args) {
   const server = await startAssetServer(prep);
   process.stdout.write(`Asset server ready at ${prep.baseUrl}\n`);
   const launchPropsPath = await writeLaunchProps(prep);
+  const cli = getRemotionCli(prep.remotionDir);
+  const cliArgs = [...cli.args, "studio", "src/index.ts", "--props", launchPropsPath];
+  if (prep.browserExecutable) {
+    cliArgs.push("--browser-executable", prep.browserExecutable);
+  }
 
   try {
-    await runCommand(getRemotionCli(prep.remotionDir), ["studio", "src/index.ts", "--props", launchPropsPath], {
+    await runCommand(cli.command, cliArgs, {
       cwd: prep.remotionDir,
       stdio: "inherit"
     });
@@ -122,30 +132,42 @@ async function handleRender(args) {
 
   const outputPath = path.resolve(args.output || path.join(prep.outDir, "book2video.remotion.mp4"));
   const launchPropsPath = await writeLaunchProps(prep);
+  const cli = getRemotionCli(prep.remotionDir);
+  const cliArgs = [
+    ...cli.args,
+    "render",
+    "src/index.ts",
+    "Book2Video",
+    outputPath,
+    "--props",
+    launchPropsPath
+  ];
+  if (prep.browserExecutable) {
+    cliArgs.push("--browser-executable", prep.browserExecutable);
+  }
 
   try {
-    await runCommand(
-      getRemotionCli(prep.remotionDir),
-      [
-        "render",
-        "src/index.ts",
-        "Book2Video",
-        outputPath,
-        "--props",
-        launchPropsPath
-      ],
-      {
-        cwd: prep.remotionDir,
-        stdio: "inherit"
-      }
-    );
+    await runCommand(cli.command, cliArgs, {
+      cwd: prep.remotionDir,
+      stdio: "inherit"
+    });
   } finally {
     await closeServer(server);
   }
 }
 
 function getRemotionCli(remotionDir) {
-  return path.join(remotionDir, "node_modules", ".bin", process.platform === "win32" ? "remotion.cmd" : "remotion");
+  if (process.platform === "win32") {
+    return {
+      command: process.execPath,
+      args: [path.join(remotionDir, "node_modules", "@remotion", "cli", "remotion-cli.js")]
+    };
+  }
+
+  return {
+    command: path.join(remotionDir, "node_modules", ".bin", "remotion"),
+    args: []
+  };
 }
 
 async function prepareRenderContext(args) {
@@ -162,6 +184,7 @@ async function prepareRenderContext(args) {
   const port = Number.parseInt(args.port || "0", 10);
   const bgmDir = args["bgm-dir"] ? path.resolve(args["bgm-dir"]) : "";
   const selectedBgm = bgmDir ? await chooseBestBgm(bgmDir, runtime) : null;
+  const browserExecutable = await detectBrowserExecutable();
   const propsFilePath = path.join(outDir, "book2video.render-props.json");
   const fps = Number.parseInt(args.fps || runtime.fps || "30", 10);
   const width = Number.parseInt(args.width || runtime.width || "1080", 10);
@@ -199,6 +222,7 @@ async function prepareRenderContext(args) {
     runtime,
     remotionDir,
     port,
+    browserExecutable,
     renderProps,
     propsFilePath,
     selectedBgm,
@@ -210,11 +234,20 @@ async function prepareRenderContext(args) {
 async function startAssetServer(context) {
   const server = http.createServer(async (request, response) => {
     try {
+      if (request.method === "OPTIONS") {
+        response.writeHead(204, CORS_HEADERS);
+        response.end();
+        return;
+      }
+
       const requestUrl = new URL(request.url || "/", "http://127.0.0.1");
       const pathname = decodeURIComponent(requestUrl.pathname);
 
       if (pathname === "/book2video.render-props.json") {
-        response.writeHead(200, {"Content-Type": "application/json; charset=utf-8"});
+        response.writeHead(200, {
+          ...CORS_HEADERS,
+          "Content-Type": "application/json; charset=utf-8"
+        });
         response.end(JSON.stringify(buildServedRenderProps(context), null, 2));
         return;
       }
@@ -227,14 +260,17 @@ async function startAssetServer(context) {
       const relativePath = pathname.replace(/^\/+/, "");
       const fullPath = path.resolve(context.outDir, relativePath);
       if (!fullPath.startsWith(context.outDir)) {
-        response.writeHead(403);
+        response.writeHead(403, CORS_HEADERS);
         response.end("Forbidden");
         return;
       }
 
       await pipeFile(fullPath, response);
     } catch (error) {
-      response.writeHead(404, {"Content-Type": "text/plain; charset=utf-8"});
+      response.writeHead(404, {
+        ...CORS_HEADERS,
+        "Content-Type": "text/plain; charset=utf-8"
+      });
       response.end(error instanceof Error ? error.message : "Not found");
     }
   });
@@ -291,7 +327,10 @@ function toUrlPath(rootDir, filePath) {
 async function pipeFile(filePath, response) {
   const buffer = await fs.readFile(filePath);
   const ext = path.extname(filePath).toLowerCase();
-  response.writeHead(200, {"Content-Type": MIME_TYPES.get(ext) || "application/octet-stream"});
+  response.writeHead(200, {
+    ...CORS_HEADERS,
+    "Content-Type": MIME_TYPES.get(ext) || "application/octet-stream"
+  });
   response.end(buffer);
 }
 
@@ -308,6 +347,49 @@ async function closeServer(server) {
       resolve();
     });
   });
+}
+
+async function detectBrowserExecutable() {
+  const override = process.env.REMOTION_BROWSER_EXECUTABLE;
+  if (override) {
+    try {
+      await fs.access(override);
+      return override;
+    } catch {
+      process.stdout.write(`Remotion browser override not found: ${override}\n`);
+    }
+  }
+
+  const candidates = process.platform === "win32"
+    ? [
+        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+        "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
+      ]
+    : process.platform === "darwin"
+      ? [
+          "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+          "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
+        ]
+      : [
+          "/usr/bin/google-chrome",
+          "/usr/bin/google-chrome-stable",
+          "/usr/bin/chromium",
+          "/usr/bin/chromium-browser",
+          "/usr/bin/microsoft-edge"
+        ];
+
+  for (const candidate of candidates) {
+    try {
+      await fs.access(candidate);
+      return candidate;
+    } catch {
+      continue;
+    }
+  }
+
+  return "";
 }
 
 async function chooseBestBgm(bgmDir, runtimePlan) {
@@ -373,12 +455,11 @@ function stripBom(value) {
 
 function runCommand(command, args, options = {}) {
   return new Promise((resolve, reject) => {
-    const useShell = process.platform === "win32" && /\.cmd$/i.test(command);
     const child = spawn(command, args, {
       cwd: options.cwd || process.cwd(),
       env: process.env,
       stdio: options.stdio || "pipe",
-      shell: useShell
+      shell: false
     });
 
     let stderr = "";
