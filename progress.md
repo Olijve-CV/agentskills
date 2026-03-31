@@ -57,6 +57,8 @@
   - Ran `render-remotion.mjs prepare` successfully against a temporary runtime output and confirmed it writes Remotion-ready props files.
   - Started a smoke render through `render-remotion.mjs`; the pipeline reached the Remotion render stage but did not finish within the command timeout window.
   - Confirmed image generation against a live CDP browser session and a full successful final render still remain unverified in this turn.
+  - Added four type-aware Remotion themes and automatic theme resolution with a universal fallback.
+  - Updated the production-plan guidance so research can emit `book_category`, `genre_tags`, and `theme_mode`.
 - Files created/modified:
   - `task_plan.md` (updated)
   - `findings.md` (updated)
@@ -71,6 +73,7 @@
 | Voice synthesis | Temporary 6-scene JSON plan | Produce per-scene audio, subtitles, and runtime plan | Passed after retry/resume fixes | pass |
 | Remotion type check | `npx tsc --noEmit` in `skills/book2video/remotion` | No TypeScript errors | Passed | pass |
 | Remotion prepare | `render-remotion.mjs prepare` on temporary runtime output | Write launch/render props JSON | Passed | pass |
+| Theme system type check | Updated Remotion theme-aware composition | No TypeScript errors | Passed | pass |
 | Remotion smoke render | `render-remotion.mjs render` on a tiny temporary runtime output | Start and finish MP4 render | Started but timed out before completion | partial |
 | Render end-to-end | Final render command on realistic assets | Produce MP4 | Not fully verified in this turn | blocked |
 | Image generation end-to-end | `generate-images` against live CDP session | Produce scene images | Not run in this validation pass | blocked |

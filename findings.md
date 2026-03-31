@@ -29,6 +29,7 @@
 - `edge-tts` subtitle output uses comma-separated timestamps such as `00:00:05,512`.
 - Latest npm versions resolved during implementation: `remotion@4.0.441`, `@remotion/media@4.0.441`, `@remotion/cli@4.0.441`, `react@19.2.4`, `react-dom@19.2.4`.
 - The Remotion CLI binary is provided by `@remotion/cli`, not by the `remotion` package itself.
+- The first visual-theme pass now supports four categories: `business-growth`, `psychology-cognition`, `social-history`, and `fiction-literature`, with `universal` as the fallback.
 
 ## Technical Decisions
 | Decision | Rationale |
@@ -38,6 +39,7 @@
 | Use a structured production-plan JSON between research and rendering | Makes image generation, TTS, subtitles, and video rendering scriptable and testable |
 | Add automatic retry and resumability to TTS synthesis | Edge-based online synthesis can timeout intermittently; long runs need resume support |
 | Separate the Remotion renderer into its own wrapper script and project folder | Keeps the existing prep CLI stable while adding a stronger template layer |
+| Detect theme from explicit category first, then tags/text, then fall back to a universal premium theme | This matches the user's preference for auto mapping without risky forced guessing |
 
 ## Issues Encountered
 | Issue | Resolution |

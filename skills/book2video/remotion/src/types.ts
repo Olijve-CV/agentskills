@@ -17,6 +17,9 @@ export type RenderProps = {
   title: string;
   author: string;
   sourceUrl: string;
+  bookCategory?: string;
+  genreTags?: string[];
+  themeMode?: "auto" | "business-growth" | "psychology-cognition" | "social-history" | "fiction-literature" | "universal";
   fps: number;
   width: number;
   height: number;

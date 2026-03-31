@@ -11,6 +11,9 @@ Use a `production-plan.json` file as the handoff between research and rendering.
   "source_url": "https://example.com/book-page",
   "language": "zh-CN",
   "aspect_ratio": "9:16",
+  "book_category": "business-growth",
+  "genre_tags": ["habit", "self-improvement", "behavior"],
+  "theme_mode": "auto",
   "duration_target_sec": 120,
   "voice": {
     "voice_name": "zh-CN-XiaoxiaoNeural",
@@ -25,6 +28,16 @@ Use a `production-plan.json` file as the handoff between research and rendering.
   "scenes": []
 }
 ```
+
+## Optional Theme Metadata
+
+The Remotion renderer supports automatic visual theme selection. To make that reliable, include these optional top-level fields whenever possible:
+
+- `book_category`: one of `business-growth`, `psychology-cognition`, `social-history`, `fiction-literature`
+- `genre_tags`: a short string array with topic clues
+- `theme_mode`: usually `auto`; set an explicit theme only when you want to override classification
+
+If `book_category` is absent, the renderer falls back to keyword-based classification using `genre_tags`, title, and scene text. If classification is weak, it uses the universal premium book-summary theme.
 
 ## Required Scene Fields
 
@@ -82,3 +95,4 @@ You may use `image_prompts` instead of `image_prompt` when each image in the sce
 - Avoid book-report phrasing.
 - Prefer one clear idea per scene.
 - Use image prompts that imply mood and symbolism instead of literal cover art.
+- When possible, set `book_category` deliberately so the visual theme matches the book type.

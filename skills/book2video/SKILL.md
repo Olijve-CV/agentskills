@@ -49,6 +49,7 @@ Capture:
 
 - book title
 - author
+- book category for visual theming
 - genre / topic
 - target reader
 - 3 to 5 strongest ideas, tensions, or takeaways
@@ -66,6 +67,7 @@ Targets:
 - the opening title card is rendered separately by the CLI, so scenes should start with the spoken content
 - each scene must include narration, subtitle text, and either `image_prompt` or `image_prompts`
 - each scene should have an `energy` value of `low`, `medium`, or `high`
+- include `book_category` and `genre_tags` whenever you can support them from the research
 - use Chinese wording that works as spoken narration
 
 Do not overstuff a scene. Shorter, cleaner narration usually makes a better short video.

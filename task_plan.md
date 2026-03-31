@@ -53,6 +53,7 @@ Phase 4
 | Treat `ffmpeg` as an external dependency instead of inventing a custom renderer | Standard tool for vertical video assembly, subtitles, and audio mixing |
 | Use `edge-tts` as the default voice engine | It is available locally and produces better Chinese voices than legacy Windows speech synthesis |
 | Use `Remotion + ffmpeg` as the default rendering architecture | Gives the skill a maintainable template layer while keeping deterministic media prep and fallback rendering |
+| Use four auto-mapped visual themes with a universal fallback | Matches the user's requirement for type-aware styling without forcing uncertain classifications |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
