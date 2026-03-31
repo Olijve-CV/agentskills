@@ -253,7 +253,7 @@ async function startAssetServer(context) {
       }
 
       if (context.extraFiles.has(pathname)) {
-        await pipeFile(context.extraFiles.get(pathname), response);
+        await pipeFile(context.extraFiles.get(pathname), request, response);
         return;
       }
 
@@ -265,7 +265,7 @@ async function startAssetServer(context) {
         return;
       }
 
-      await pipeFile(fullPath, response);
+      await pipeFile(fullPath, request, response);
     } catch (error) {
       response.writeHead(404, {
         ...CORS_HEADERS,
@@ -324,14 +324,46 @@ function toUrlPath(rootDir, filePath) {
     .join("/");
 }
 
-async function pipeFile(filePath, response) {
+async function pipeFile(filePath, request, response) {
   const buffer = await fs.readFile(filePath);
+  const stat = await fs.stat(filePath);
   const ext = path.extname(filePath).toLowerCase();
-  response.writeHead(200, {
+  const range = request.headers.range;
+  const baseHeaders = {
     ...CORS_HEADERS,
-    "Content-Type": MIME_TYPES.get(ext) || "application/octet-stream"
+    "Content-Type": MIME_TYPES.get(ext) || "application/octet-stream",
+    "Accept-Ranges": "bytes",
+    "Content-Length": String(stat.size)
+  };
+
+  if (!range) {
+    response.writeHead(200, baseHeaders);
+    response.end(buffer);
+    return;
+  }
+
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(range);
+  if (!match) {
+    response.writeHead(416, {
+      ...CORS_HEADERS,
+      "Content-Range": `bytes */${stat.size}`
+    });
+    response.end();
+    return;
+  }
+
+  const start = match[1] ? Number.parseInt(match[1], 10) : 0;
+  const end = match[2] ? Number.parseInt(match[2], 10) : stat.size - 1;
+  const safeStart = Math.max(0, Math.min(start, stat.size - 1));
+  const safeEnd = Math.max(safeStart, Math.min(end, stat.size - 1));
+  const chunk = buffer.subarray(safeStart, safeEnd + 1);
+
+  response.writeHead(206, {
+    ...baseHeaders,
+    "Content-Length": String(chunk.length),
+    "Content-Range": `bytes ${safeStart}-${safeEnd}/${stat.size}`
   });
-  response.end(buffer);
+  response.end(chunk);
 }
 
 async function closeServer(server) {

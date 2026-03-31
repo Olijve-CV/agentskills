@@ -137,6 +137,7 @@ async function handleGenerateImages(args) {
       const prompts = getImagePrompts(scene);
       for (let index = 0; index < prompts.length; index += 1) {
         const prompt = prompts[index];
+        await openChatGpt(page, imagePageUrl);
         const knownState = await readChatGptState(page);
         const fullPrompt = [
           "Generate one vertical image for a Chinese short-form book-summary video.",
@@ -679,7 +680,7 @@ async function walkFiles(rootDir) {
 }
 
 function drawtextFilter({ text, y, fontSize, fontFile, color }) {
-  const parts = ["drawtext"];
+  const parts = [];
   if (fontFile) {
     parts.push(`fontfile='${escapeSubtitlePath(fontFile)}'`);
   }
@@ -691,7 +692,7 @@ function drawtextFilter({ text, y, fontSize, fontFile, color }) {
   parts.push("borderw=2");
   parts.push("bordercolor=#00000099");
   parts.push("line_spacing=10");
-  return parts.join(":");
+  return `drawtext=${parts.join(":")}`;
 }
 
 async function detectChineseFont() {
